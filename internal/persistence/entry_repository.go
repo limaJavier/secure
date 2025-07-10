@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/limaJavier/secure/internal/encryption"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -16,19 +15,9 @@ type EntryRepository interface {
 }
 
 func NewEntryRepository(user LoggedUser) (EntryRepository, error) {
-	db, err := gorm.Open(sqlite.Open("database.db"), &gorm.Config{})
+	db, err := getDb()
 	if err != nil {
-		return nil, fmt.Errorf("cannot initialize EntryRepository: %v", err)
-	}
-
-	// Ensure database schema is correct
-	err = db.AutoMigrate(&User{})
-	if err != nil {
-		return nil, fmt.Errorf("cannot initialize EntryRepository: %v", err)
-	}
-	err = db.AutoMigrate(&Entry{})
-	if err != nil {
-		return nil, fmt.Errorf("cannot initialize EntryRepository: %v", err)
+		return nil, fmt.Errorf("cannot initialize entry-repository: %v", err)
 	}
 
 	return &entryRepository{
@@ -48,7 +37,7 @@ type entryRepository struct {
 
 func (repository *entryRepository) Create(entry Entry) error {
 	// Assert user-id consistency
-	if repository.user.ID != entry.UserID {
+	if repository.user.Username != entry.Username {
 		panic("cannot create entry: user-id does not match logged one")
 	}
 
@@ -62,7 +51,7 @@ func (repository *entryRepository) Create(entry Entry) error {
 func (repository *entryRepository) Retrieve() ([]Entry, error) {
 	// Query DB for user's entries
 	encryptedEntries := make([]Entry, 0)
-	result := repository.db.Where("user_id = ?", repository.user.ID).Find(&encryptedEntries)
+	result := repository.db.Where("username = ?", repository.user.Username).Find(&encryptedEntries)
 	if result.Error != nil {
 		return nil, fmt.Errorf("cannot retrieve entries: %v", result.Error)
 	}
@@ -80,12 +69,35 @@ func (repository *entryRepository) Retrieve() ([]Entry, error) {
 }
 
 func (repository *entryRepository) Update(entry Entry) error {
-	// Assert user-id consistency
-	if repository.user.ID != entry.UserID {
-		panic("cannot update entry: user-id does not match logged one")
+	// Query DB for entry with given id
+	var storedEntry Entry
+	result := repository.db.First(&storedEntry, entry.ID)
+	if result.Error != nil {
+		return fmt.Errorf("cannot update entry: %v", result.Error)
 	}
 
-	entry, err := repository.encrypt(entry) // Encrypt entry
+	storedEntry, err := repository.decrypt(storedEntry) // Decrypt storedEntry
+	if err != nil {
+		return fmt.Errorf("cannot update entry: %v", err)
+	}
+
+	// Verify if any of the properties is an empty string, if so then don't update it
+	if entry.Name == "" {
+		entry.Name = storedEntry.Name
+	}
+	if entry.Description == "" {
+		entry.Description = storedEntry.Description
+	}
+	if entry.Password == "" {
+		entry.Password = storedEntry.Password
+	}
+
+	// Ensure logged-user cannot update other users' entries
+	if repository.user.Username != entry.Username {
+		return fmt.Errorf("cannot delete entry: entry with id %v does not belong to user %v", entry.ID, repository.user.Username)
+	}
+
+	entry, err = repository.encrypt(entry) // Encrypt entry
 	if err != nil {
 		return fmt.Errorf("cannot update entry: %v", err)
 	}
@@ -102,8 +114,8 @@ func (repository *entryRepository) Delete(id uint) error {
 	}
 
 	// Ensure logged-user cannot delete other users' entries
-	if repository.user.ID != entry.UserID {
-		return fmt.Errorf("cannot delete entry: entry with id %v does not belong to user with id %v", entry.ID, repository.user.ID)
+	if repository.user.Username != entry.Username {
+		return fmt.Errorf("cannot delete entry: entry with id %v does not belong to user with id %v", entry.ID, repository.user.Username)
 	}
 
 	return repository.db.Delete(&entry).Error // Delete entry from DB
