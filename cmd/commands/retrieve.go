@@ -11,10 +11,9 @@ var retrieveCmd = &cobra.Command{
 	Use:   "retrieve",
 	Short: "Retrieves all password entries",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Process logged-user...
-		user := persistence.LoggedUser{
-			Username: "",
-			Key:      []byte("key"),
+		user, err := auth()
+		if err != nil {
+			log.Fatalf("cannot auth user: %v", err)
 		}
 
 		repository, err := persistence.NewEntryRepository(user) // Initialize repository

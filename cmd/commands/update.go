@@ -21,10 +21,9 @@ var updateCmd = &cobra.Command{
 			log.Fatalln("entry-id argument must be of type unsigned-integer")
 		}
 
-		// TODO: Process logged-user...
-		user := persistence.LoggedUser{
-			Username: "",
-			Key:      []byte("key"),
+		user, err := auth()
+		if err != nil {
+			log.Fatalf("cannot auth user: %v", err)
 		}
 
 		repository, err := persistence.NewEntryRepository(user) // Initialize repository
