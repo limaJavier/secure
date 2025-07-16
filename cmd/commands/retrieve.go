@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/limaJavier/secure/internal/persistence"
@@ -11,22 +12,31 @@ var retrieveCmd = &cobra.Command{
 	Use:   "retrieve",
 	Short: "Retrieves all password entries",
 	Run: func(cmd *cobra.Command, args []string) {
+		// Auth user
 		user, err := auth()
 		if err != nil {
 			log.Fatalf("cannot auth user: %v", err)
 		}
 
-		repository, err := persistence.NewEntryRepository(user) // Initialize repository
+		// Initialize repository
+		repository, err := persistence.NewEntryRepository(user)
 		if err != nil {
 			log.Fatalf("an unexpected error occurred: %v", err)
 		}
 
-		entries, err := repository.Retrieve() // Retrieve entries
+		// Retrieve entries
+		entries, err := repository.Retrieve()
 		if err != nil {
 			log.Fatalf("an unexpected error occurred: %v", err)
 		}
 
-		// TODO: Properly print entries
-		log.Println(entries)
+		for _, entry := range entries {
+			fmt.Println("--------------------")
+			fmt.Printf("ID: %v\n", entry.ID)
+			fmt.Printf("Name: %v\n", entry.Name)
+			fmt.Printf("Description: %v\n", entry.Description)
+			fmt.Printf("Password: %v\n", entry.Password)
+		}
+		fmt.Println("--------------------")
 	},
 }

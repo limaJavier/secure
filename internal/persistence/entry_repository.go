@@ -40,7 +40,6 @@ func (repository *entryRepository) Create(entry Entry) error {
 	if repository.user.Username != entry.Username {
 		panic("cannot create entry: user-id does not match logged one")
 	}
-
 	entry, err := repository.encrypt(entry) // Encrypt entry
 	if err != nil {
 		return fmt.Errorf("cannot create entry: %v", err)
@@ -48,6 +47,7 @@ func (repository *entryRepository) Create(entry Entry) error {
 	result := repository.db.Create(&entry) // Store on DB
 	return result.Error
 }
+
 func (repository *entryRepository) Retrieve() ([]Entry, error) {
 	// Query DB for user's entries
 	encryptedEntries := make([]Entry, 0)
@@ -76,6 +76,11 @@ func (repository *entryRepository) Update(entry Entry) error {
 		return fmt.Errorf("cannot update entry: %v", result.Error)
 	}
 
+	// Ensure logged-user cannot update other users' entries
+	if repository.user.Username != storedEntry.Username {
+		return fmt.Errorf("cannot update entry: entry with id %v does not belong to user %v", entry.ID, repository.user.Username)
+	}
+
 	storedEntry, err := repository.decrypt(storedEntry) // Decrypt storedEntry
 	if err != nil {
 		return fmt.Errorf("cannot update entry: %v", err)
@@ -90,11 +95,6 @@ func (repository *entryRepository) Update(entry Entry) error {
 	}
 	if entry.Password == "" {
 		entry.Password = storedEntry.Password
-	}
-
-	// Ensure logged-user cannot update other users' entries
-	if repository.user.Username != entry.Username {
-		return fmt.Errorf("cannot delete entry: entry with id %v does not belong to user %v", entry.ID, repository.user.Username)
 	}
 
 	entry, err = repository.encrypt(entry) // Encrypt entry

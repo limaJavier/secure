@@ -3,7 +3,6 @@ package commands
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"syscall"
 
@@ -36,7 +35,7 @@ func readInput(message string, hidden bool) (string, error) {
 func auth() (persistence.LoggedUser, error) {
 	userRepository, err := persistence.NewUserRepository()
 	if err != nil {
-		log.Fatalf("an unexpected error occurred: %v", err)
+		return persistence.LoggedUser{}, err
 	}
 
 	username, err := readInput("Enter username", false)

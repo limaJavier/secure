@@ -15,16 +15,19 @@ var createCmd = &cobra.Command{
 - Description
 - Password`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Auth user
 		user, err := auth()
 		if err != nil {
 			log.Fatalf("cannot auth user: %v", err)
 		}
 
-		repository, err := persistence.NewEntryRepository(user) // Initialize repository
+		// Initialize repository
+		repository, err := persistence.NewEntryRepository(user)
 		if err != nil {
 			log.Fatalf("an unexpected error occurred: %v", err)
 		}
 
+		// Read user input
 		name, err := readInput("Enter name", false)
 		if err != nil {
 			log.Fatal(err)
@@ -44,14 +47,14 @@ var createCmd = &cobra.Command{
 			log.Fatal("passwords don't match")
 		}
 
+		// Create entry
 		entry := persistence.Entry{
 			Name:        name,
 			Description: description,
 			Password:    password,
 			Username:    user.Username,
 		}
-
-		err = repository.Create(entry) // Create entry
+		err = repository.Create(entry)
 		if err != nil {
 			log.Fatalf("an unexpected error occurred: %v", err)
 		}
