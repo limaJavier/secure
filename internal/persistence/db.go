@@ -1,14 +1,17 @@
 package persistence
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 
+	"github.com/adrg/xdg"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func getDb(inMemory bool) (*gorm.DB, error) {
-	// Establish database connection
+	//** Establish database connection
 	var db *gorm.DB
 	var err error
 	if inMemory {
@@ -17,17 +20,21 @@ func getDb(inMemory bool) (*gorm.DB, error) {
 			return nil, err
 		}
 	} else {
-		db, err = gorm.Open(sqlite.Open("secure.db"), &gorm.Config{})
-		if err != nil {
-			return nil, err
+		dbDir := filepath.Join(xdg.DataHome, "secure")
+		dbPath := filepath.Join(dbDir, "secure.db")
+
+		// Ensure the directory exists
+		if err := os.MkdirAll(dbDir, 0700); err != nil {
+			return nil, fmt.Errorf("cannot create db directory: %v", err)
 		}
-		err = os.Chmod("secure.db", 0666) // Allow read/write to all users
+
+		db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// Ensure database schema is correct
+	//** Ensure database schema is correct
 	err = db.AutoMigrate(&User{})
 	if err != nil {
 		return nil, err
