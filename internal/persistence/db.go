@@ -5,9 +5,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func getDb() (*gorm.DB, error) {
+func getDb(inMemory bool) (*gorm.DB, error) {
 	// Establish database connection
-	db, err := gorm.Open(sqlite.Open("secure.db"), &gorm.Config{})
+	var db *gorm.DB
+	var err error
+	if inMemory {
+		db, err = gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	} else {
+		db, err = gorm.Open(sqlite.Open("secure.db"), &gorm.Config{})
+	}
 	if err != nil {
 		return nil, err
 	}

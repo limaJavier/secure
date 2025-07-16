@@ -12,7 +12,7 @@ type UserRepository interface {
 }
 
 func NewUserRepository() (UserRepository, error) {
-	db, err := getDb()
+	db, err := getDb(false)
 	if err != nil {
 		return nil, fmt.Errorf("cannot initialize user-repository: %v", err)
 	}

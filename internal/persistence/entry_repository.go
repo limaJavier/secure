@@ -15,7 +15,7 @@ type EntryRepository interface {
 }
 
 func NewEntryRepository(user LoggedUser) (EntryRepository, error) {
-	db, err := getDb()
+	db, err := getDb(false)
 	if err != nil {
 		return nil, fmt.Errorf("cannot initialize entry-repository: %v", err)
 	}
