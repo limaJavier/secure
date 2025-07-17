@@ -14,6 +14,7 @@ var createCmd = &cobra.Command{
 - Name
 - Description
 - Password`,
+	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Auth user
 		user, err := auth()

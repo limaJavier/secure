@@ -11,6 +11,7 @@ import (
 var retrieveCmd = &cobra.Command{
 	Use:   "retrieve",
 	Short: "Retrieves all password entries",
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Auth user
 		user, err := auth()

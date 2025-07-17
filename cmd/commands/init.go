@@ -16,6 +16,7 @@ var initCmd = &cobra.Command{
 	Long: `Creates a new user comprised of:
 - Username
 - Password`,
+	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize repository
 		userRepository, err := persistence.NewUserRepository()
